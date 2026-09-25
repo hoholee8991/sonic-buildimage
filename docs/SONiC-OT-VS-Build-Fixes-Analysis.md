@@ -110,6 +110,17 @@ submodule 分支 `tom`:`sonic-linux-kernel` `8ce2a4987`、`sonic-bmp` `2e07a74a2
 | submodule 內未 commit 的修改,superproject 的 add 看不見 | 先在 submodule 內各自 commit,再 bump gitlink |
 | `.git/objects` 有 3180 個 root 擁有的物件 | `sudo chown -R user:user .git` |
 
+### 5.4 builder 容器工程(2026-09-25)
+
+| 項目 | 狀態 |
+|------|------|
+| 四件套 `builder/{Dockerfile,build.sh,run.sh,README.md}`(`D:\goto\SONiC_vm\builder\` ⇄ WSL `~/builder`) | 完成;docker CLI/cli-plugins/sock 掛入(DooD)、恆等路徑映射(A8)、`DEFAULT_CONTAINER_REGISTRY=""`、host 側 `/tmp/docklock` 預建(A9)、`--restart on-failure`(A12) |
+| 映像 `ot-vs-builder:2026-09-25` | bookworm 釘 `sha256:f37a335e...`(builder 層級);j2cli 0.3.10 + Jinja2 3.1.6(venv) |
+| digest 釘選統一(commit `69ecf0e85` + j2 修改) | `versions-docker` 表 `amd64:amd64/debian:{bullseye=da5c2dc5, buster=2a0c1b91, bookworm=faa92cdf}`;slave j2 native 分支補 `amd64/`(詳 A7、契約 §3) |
+| V1/V2 驗證 | builder 建映像 14s;slave 全鏈(buster `c34baac7287`→bullseye `de6ea666aff`→bookworm)+ debs + docker-base/config-engine 均於 builder 容器內建成,0 FAIL |
+| V3 | fresh clone(`~/sonic-buildimage-v2`)從零全量重編 = 契約 §8 閉環 + 移植演練;進行中(背景,`--restart on-failure` 崩潰自癒) |
+| 過程修復 | buildx plugin 掛載(A6)、digest×repo 專屬性(A7)、lockdir(A9)、`make slave` 陷阱(A10)、drvfs 首讀截斷(A11)、WSL 三次崩潰(A4 SOP 恢復) |
+
 ## 6. 未決事項(v2)
 
 | # | 事項 | 狀態 |

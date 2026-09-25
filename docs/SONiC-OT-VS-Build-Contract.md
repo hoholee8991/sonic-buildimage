@@ -31,12 +31,13 @@
 
 | 項目 | 現況 | 狀態 |
 |------|------|------|
-| bullseye slave `FROM {{ prefix }}debian:bullseye` | 已釘 `@sha256:da5c2dc5e036efbfa25b4a0abfb41e497a44c3e9ab630e8ef6699600790511e7`(amd64 manifest,Joe 2026-09-01 anchor,pull 已驗證;Dockerfile.j2 三處皆為 amd64 host stage) | 已固定 |
-| bookworm slave `FROM` | 仍為 floating tag(ot-vs 的 kernel 在 bookworm slave 建,同樣會漂移) | ⚠️ 待辦:同法釘 digest(待 Joe build log) |
-| buster slave `FROM` | 已釘 `@sha256:58ce6f1271ae1c8a2006ff7d3e54e9874d839f573d8009c20154ad0f2fb0a225`(j2 渲染實證 2026-09-25;與本機 `debian:buster` RepoDigest 一致) | 已固定 |
+| **釘選機制(2026-09-25 定案)** | digest 是 **repo 專屬**的;釘選正機制 = `files/build/versions/default/versions-docker` 表(鍵 `amd64:amd64/debian:<distro>`,version-control 渲染後 sed 入 FROM)+ slave j2 native 分支寫 `{{ prefix }}amd64/debian:<distro>`(bullseye 另帶 `@sha256:`)| 已固定 |
+| bullseye slave | `amd64/debian:bullseye@sha256:da5c2dc5e036efbfa25b4a0abfb41e497a44c3e9ab630e8ef6699600790511e7`(Joe 2026-09-01 錨點; slave 內建 + 表 `amd64:amd64/debian:bullseye` 雙保險) | 已固定 |
+| buster slave | `amd64/debian:buster@sha256:2a0c1b9175adf759420fe0fbd7f5b449038319171eb76554bb76cbe172b62b42`(2026-09-25 pull 驗證;舊 `58ce...` 是 `library/debian` 的 digest,跨 repo 不解析,已替換) | 已固定 |
+| bookworm slave | `amd64/debian:bookworm@sha256:faa92cdf4de48e5ca43be8bd973e3e1a2ddb2ed0746ee92560cb24a2053509fe`(2026-09-25 pull 驗證;kernel 在此 slave 建,不再漂移。Joe 若提供其 9/1 bookworm 錨點可再對齊,非阻塞) | 已固定 |
 | qemu-user-static(multiarch) | 版本已寫死於 `Dockerfile.j2`(如 `x86_64-arm-6.1.0-8`) | 已固定 |
-| `DEFAULT_CONTAINER_REGISTRY` | **必須 = `""`**(2026-09-25 實證):digest 錨點只存在 Docker Hub;樹預設 `publicmirror.azurecr.io`(`rules/config:306`)無此 digest → slave 建置炸(A7);builder `build.sh` 已強制空值 | 已對齊 |
-| 本機已建 slave 映像 | `sonic-slave-bullseye:6b67c9c214e`、`sonic-slave-bookworm:a9f2d3231b1` 等 | 僅本機參考;跨機一致化依賴上面 digest 釘選 |
+| `DEFAULT_CONTAINER_REGISTRY` | **必須 = `""`**(= Joe 對齊):j2 路徑自帶 `amd64/`,registry 非空會疊出 `amd64/amd64/debian`;樹預設 `publicmirror.azurecr.io` 亦無本表任何 digest。builder `build.sh` 已強制空值(A7) | 已對齊 |
+| 本機已建 slave 映像 | `sonic-slave-buster:c34baac7287`、`sonic-slave-bullseye:de6ea666aff`、bookworm(新 tag)皆為 2026-09-25 builder 驅動所建;舊 `6b67c9c214e`/`a9f2d3231b1` 為 9/21 ACR 時代產物 | 跨機一致化依賴上面釘選表 |
 
 ## 4. 主機與工具鏈
 
