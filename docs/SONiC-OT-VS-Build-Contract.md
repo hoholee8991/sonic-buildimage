@@ -32,9 +32,10 @@
 | 項目 | 現況 | 狀態 |
 |------|------|------|
 | bullseye slave `FROM {{ prefix }}debian:bullseye` | 已釘 `@sha256:da5c2dc5e036efbfa25b4a0abfb41e497a44c3e9ab630e8ef6699600790511e7`(amd64 manifest,Joe 2026-09-01 anchor,pull 已驗證;Dockerfile.j2 三處皆為 amd64 host stage) | 已固定 |
-| bookworm/buster slave `FROM` | 仍為 floating tag(ot-vs 的 kernel 在 bookworm slave 建,同樣會漂移) | ⚠️ 待辦:同法釘 digest |
+| bookworm slave `FROM` | 仍為 floating tag(ot-vs 的 kernel 在 bookworm slave 建,同樣會漂移) | ⚠️ 待辦:同法釘 digest(待 Joe build log) |
+| buster slave `FROM` | 已釘 `@sha256:58ce6f1271ae1c8a2006ff7d3e54e9874d839f573d8009c20154ad0f2fb0a225`(j2 渲染實證 2026-09-25;與本機 `debian:buster` RepoDigest 一致) | 已固定 |
 | qemu-user-static(multiarch) | 版本已寫死於 `Dockerfile.j2`(如 `x86_64-arm-6.1.0-8`) | 已固定 |
-| `DEFAULT_CONTAINER_REGISTRY` | Joe 用 `""`(容器全部本地建);我方值待確認 | ⚠️ 待對齊 |
+| `DEFAULT_CONTAINER_REGISTRY` | **必須 = `""`**(2026-09-25 實證):digest 錨點只存在 Docker Hub;樹預設 `publicmirror.azurecr.io`(`rules/config:306`)無此 digest → slave 建置炸(A7);builder `build.sh` 已強制空值 | 已對齊 |
 | 本機已建 slave 映像 | `sonic-slave-bullseye:6b67c9c214e`、`sonic-slave-bookworm:a9f2d3231b1` 等 | 僅本機參考;跨機一致化依賴上面 digest 釘選 |
 
 ## 4. 主機與工具鏈
@@ -44,7 +45,8 @@
 | 平台 | Windows + WSL2 Ubuntu-26.04(systemd 已啟用);建置一律在 WSL ext4 `~/sonic-buildimage` |
 | 資源 | 8 CPU / 12GB RAM / swap 8GB(`.wslconfig`) |
 | Docker | docker-ce 29.8.1,`--privileged` 容器可取用 `/dev/kvm` |
-| j2 工具 | Makefile.work 接受 jinjanator(j2cli 後繼);本機 j2cli 0.3.10 + importlib shim 補丁 |
+| builder 容器 | `ot-vs-builder:2026-09-25`(`D:\goto\SONiC_vm\builder\`,來源同步 WSL `~/builder`):基底 bookworm 釘 `@sha256:f37a335e82bca302e955fa39f9dfe28f1be618f016f8a2b56318e5a5111afc26`(builder 層級錨點 2026-09-25,僅驅動層不影響 artifact);內容 git/make/jq/curl/wget/telnet/python3-venv + j2cli 0.3.10 + Jinja2 3.1.6;掛 host docker CLI + cli-plugins + sock(DooD);**恆等路徑映射**(A8)與 `DEFAULT_CONTAINER_REGISTRY=""`(A7)由 build.sh 強制;run.sh 在 host 跑 qemu(§8.1 同款) |
+| j2 工具 | Makefile.work 接受 jinjanator(j2cli 後繼);本機 j2cli 0.3.10 + importlib shim 補丁;builder 內以 venv 裝同版本(避 PEP 668) |
 | KVM | 建議有;無時靠 `install_sonic.py` 3600s timeout(TCG 慢) |
 
 ⚠️ 絕不在 `/mnt/d`(NTFS)上建置:大小寫不敏感與權限問題(排解 §3-B8、A3)。
