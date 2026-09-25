@@ -72,6 +72,9 @@
 | A3 | `dpkg-deb: error: control directory has bad permissions 777 (must be >=0755 and <=0775)` | WSL 掛載 Windows 磁碟預設全 777(無 metadata) | `/etc/wsl.conf` 加 `[automount]` + `options = "metadata,umask=22,fmask=11"`,然後 `wsl --shutdown` 重新掛載 |
 | A4 | WSL 反覆崩潰:`CreateInstance/E_FAIL`、`0x8007274c` 連線逾時(重負載建置時) | ext4.vhdx(53.6GB)塞爆 C: → WSL 無法建 swap/temp;之後重負載仍偶發凍結 | VHD 搬 D::robocopy ext4.vhdx → 改登錄 `HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\<guid>\BasePath`(`wsl --manage --move` 會 E_ACCESSDENIED);`.wslconfig` 設 `swapFile=D:/...`。**斷線恢復 SOP**:`wsl --shutdown` → 等 15s → 重啟 → 確認 docker active → 直接重跑 make(已完成產物快取,自動續跑) |
 | A5 | `/vcache` mkdir Permission denied(非致命警告) | SONiC 版本快取要在 WSL 根建 `/vcache`,一般使用者無權 | `sudo mkdir -p /vcache && sudo chmod 777 /vcache`(不修也只影響快取,不擋建置) |
+| A6 | builder 容器內 docker build:`BuildKit is enabled but the buildx component is missing or broken` | 只掛 host `/usr/bin/docker` 不夠——CLI 從 cli-plugins 目錄找 buildx,容器內無此目錄 | 多掛 `-v /usr/libexec/docker/cli-plugins:/usr/local/lib/docker/cli-plugins:ro`(build.sh 已含) |
+| A7 | slave 建置 `FROM publicmirror.azurecr.io/debian:bullseye@sha256:da5c2dc5...: not found` | digest 錨點 `da5c2dc5` 是 Docker Hub 的;`Dockerfile.j2:1` 的 `prefix = DEFAULT_CONTAINER_REGISTRY` 被 `rules/config:306` 預設值 `publicmirror.azurecr.io` 蓋上 → digest×registry 不匹配(ACR 鏡像無此 digest) | 建置一律 `DEFAULT_CONTAINER_REGISTRY=`(空值,與 Joe 對齊;build.sh 已強制);**配合 C13**:渲染檔比 j2 新時不會重渲染,須刪 `sonic-slave-*/Dockerfile` 再跑;⚠️ 刪時用精準檔名,`Dockerfile*` glob 會連 `.j2` 模板一起刪(2026-09-25 踩過,git checkout 可還原) |
+| A8 | builder 容器內跑 make,slave 容器掛載到空目錄/路徑錯誤 | slave 由 **host daemon** 產生,`Makefile.work` 用 `-v $PWD:/sonic`,daemon 在 **host** 解析路徑;容器內 PWD 若是 `/sonic`(與 host 不同)就掛到不存在的路徑 | builder 採「**恆等路徑映射**」:`-v $SRC:$SRC -w $SRC`(容器內路徑 = host 路徑;`DOCKER_ROOT` 也在樹內同理);見 `builder/README.md` 路徑契約 |
 
 ### B. Git checkout 狀態(Windows 端 clone 的遺毒)
 
