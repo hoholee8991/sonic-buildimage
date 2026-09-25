@@ -43,7 +43,7 @@
 | `config-setup` + `syncd_common.sh` runtime 修正 | F23–F27 | 多重 redis 使 `PING` 解析壞;per-asic 旗標設不上;不修開不了機(§8 排解 + 重開機持久驗證) | 已 commit `tom`;⚠️ 待與 Joe 的 session log 交叉比對(他的 VM 只見 17 容器 vs 我方 19,他可能在 VM 內做過等價修法) |
 | `rules/sonic-config.mk` `_TEST = n` | D14 | 跨機證實:我方 log(make-build7.log:1635)與 Joe 的 `DEB_BUILD_OPTIONS=nocheck` 各自撞到同類 dh_auto_test 失敗 | 已 commit `tom`(python wheel knob) |
 | `$*_DEB_BUILD_OPTIONS = nocheck`(systemd-sonic-generator、swss) | D15/D16 | 跨機證實(同上);採上游既有 knob(先例 rules/otairedis.mk、sairedis.mk、syncd.mk),取代 debian/rules hack | 手術後 commit `tom` |
-| `sonic-bmp` debian/rules exec bit 644→755 | — | 機制:`dpkg-buildpackage -rfakeroot` 直呼 `debian/rules`(slave.mk:808),git index 為 644,新 clone 必炸 | 已 commit;⚠️ 待 Joe 的 bmp debs log / 三條指令輸出定案 |
+| `sonic-bmp` debian/rules exec bit 644→755 | — | 機制:`dpkg-buildpackage -rfakeroot` 直呼 `debian/rules`(slave.mk:808),git index 為 644,新 clone 必炸;**Joe 機器雙機實證(2026-09-25)**:index 同為 644 但磁碟 755(`ls-files -s` vs `ls -l`,`core.filemode=true`),其建置成功全賴磁碟意外 exec bit,submodule 處於 mode-only dirty | 已 commit;⚠️ 待 Joe 確認當初是否手動 `chmod +x`(同源確認) |
 
 ### 3.2 類別 ②:時間因素
 
