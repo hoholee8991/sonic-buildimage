@@ -35,9 +35,6 @@ generate_kvm_image()
     if [ $NUM_ASIC == 4 ]; then 
          KVM_IMAGE=$OUTPUT_KVM_4ASIC_IMAGE
          RECOVERY_ISO=$onie_recovery_kvm_4asic_image
-    elif [ $NUM_ASIC == 6 ]; then
-         KVM_IMAGE=$OUTPUT_KVM_6ASIC_IMAGE
-         RECOVERY_ISO=$onie_recovery_kvm_6asic_image
     else 
          KVM_IMAGE=$OUTPUT_KVM_IMAGE
          # Use the 4-asic ONIE recovery: its machine (x86_64-ot_kvm_x86_64_4_asic-r0)
@@ -174,8 +171,6 @@ elif [ "$IMAGE_TYPE" = "kvm" ]; then
     if [ "$BUILD_MULTIASIC_KVM" == "y" ]; then
         # Genrate 4-asic KVM image
         generate_kvm_image 4
-        # Generate 6-asic KVM image
-        generate_kvm_image 6
     fi
 
 
